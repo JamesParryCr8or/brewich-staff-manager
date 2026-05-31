@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { STAFF, DAYS_SHORT, CELL_CYCLE, CELL_CONFIG, SHIFT_HOURS } from '../data/constants'
+import { STAFF_META, DAYS_SHORT, CELL_CONFIG, SHIFT_HOURS } from '../data/constants'
 
 const LEGEND = [
   { color: '#5DCAA5', label: 'Weekday shift' },
@@ -8,21 +8,30 @@ const LEGEND = [
   { color: '#D0D0D0', label: 'Day off' },
 ]
 
-export default function Rota({ rota, setRota }) {
+const WEEKEND_DAYS = new Set([4, 5]) // Sat, Sun indices
+
+function nextState(current, dayIdx) {
+  if (current === 'holiday') return 'holiday'
+  if (WEEKEND_DAYS.has(dayIdx)) {
+    return current === 'off' ? 'weekend' : 'off'
+  }
+  return current === 'off' ? 'work' : 'off'
+}
+
+export default function Rota({ rota, setRota, staffConfig }) {
   const [weekOffset, setWeekOffset] = useState(0)
   const weekIdx = ((weekOffset % 4) + 4) % 4
   const week = rota[weekIdx]
 
+  const staff = STAFF_META.map(s => ({ ...s, ...staffConfig[s.id] }))
+
   function toggleCell(empId, dayIdx) {
-    const cur = week[dayIdx][empId]
-    if (cur === 'holiday') return
-    const next = CELL_CYCLE[(CELL_CYCLE.indexOf(cur) + 1) % CELL_CYCLE.length]
     setRota(prev =>
       prev.map((w, wi) =>
         wi !== weekIdx
           ? w
           : w.map((day, di) =>
-              di !== dayIdx ? day : { ...day, [empId]: next }
+              di !== dayIdx ? day : { ...day, [empId]: nextState(day[empId], dayIdx) }
             )
       )
     )
@@ -33,10 +42,10 @@ export default function Rota({ rota, setRota }) {
   }
 
   const totalShifts = week.reduce(
-    (sum, day) => sum + STAFF.filter(s => day[s.id] !== 'off').length,
+    (sum, day) => sum + STAFF_META.filter(s => day[s.id] !== 'off').length,
     0
   )
-  const teamHours = STAFF.reduce((sum, s) => sum + hoursFor(s.id), 0)
+  const teamHours = staff.reduce((sum, s) => sum + hoursFor(s.id), 0)
 
   return (
     <div>
@@ -57,11 +66,13 @@ export default function Rota({ rota, setRota }) {
 
       <div className="rota-grid">
         <div className="rota-header" />
-        {DAYS_SHORT.map(d => (
-          <div key={d} className="rota-header">{d}</div>
+        {DAYS_SHORT.map((d, i) => (
+          <div key={d} className={`rota-header${WEEKEND_DAYS.has(i) ? ' rota-header-weekend' : ''}`}>
+            {d}
+          </div>
         ))}
 
-        {STAFF.map(s => (
+        {staff.map(s => (
           <RotaRow
             key={s.id}
             staff={s}
@@ -72,7 +83,7 @@ export default function Rota({ rota, setRota }) {
       </div>
 
       <div className="stat-row" style={{ marginTop: 16 }}>
-        {STAFF.map(s => {
+        {staff.map(s => {
           const h = hoursFor(s.id)
           return (
             <div key={s.id} className="stat">
@@ -90,7 +101,7 @@ export default function Rota({ rota, setRota }) {
       </div>
 
       <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 8 }}>
-        Click any cell to cycle: work → weekend → off. Changes save automatically.
+        Click any cell to toggle on / off. Sat &amp; Sun cells are automatically marked as weekend shifts.
       </p>
     </div>
   )
@@ -103,6 +114,7 @@ function RotaRow({ staff, week, onToggle }) {
         <div
           className={`staff-avatar ${staff.avatarClass}`}
           style={{ width: 28, height: 28, fontSize: 11, marginBottom: 0 }}
+          title={staff.name}
         >
           {staff.id}
         </div>
@@ -116,7 +128,7 @@ function RotaRow({ staff, week, onToggle }) {
             className="rota-cell"
             style={{ background: cfg.bg, color: cfg.color }}
             onClick={() => onToggle(di)}
-            title={state === 'holiday' ? 'Holiday — edit in Holidays tab' : 'Click to cycle: work → weekend → off'}
+            title={state === 'holiday' ? 'Holiday (edit in Holidays tab)' : 'Click to toggle on / off'}
           >
             {cfg.label}
           </div>

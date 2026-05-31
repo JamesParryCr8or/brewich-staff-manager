@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { STAFF, TOTAL_HOLIDAY_HOURS } from '../data/constants'
+import { STAFF_META, TOTAL_HOLIDAY_HOURS } from '../data/constants'
 
 function calcHours(from, to) {
   const days = Math.round((new Date(to) - new Date(from)) / 86_400_000) + 1
@@ -13,7 +13,8 @@ function fmt(dateStr) {
   return `${d}/${m}/${y}`
 }
 
-export default function Holidays({ holidays, setHolidays }) {
+export default function Holidays({ holidays, setHolidays, staffConfig }) {
+  const staff = STAFF_META.map(s => ({ ...s, ...staffConfig[s.id] }))
   const [form, setForm] = useState({ employee: 'A', from: '', to: '' })
   const [error, setError] = useState('')
 
@@ -24,15 +25,15 @@ export default function Holidays({ holidays, setHolidays }) {
   }
 
   function handleSubmit() {
-    if (!form.from || !form.to) { setError('Please select both dates.'); return }
-    if (form.to < form.from)    { setError('End date must be on or after start date.'); return }
+    if (!form.from || !form.to)   { setError('Please select both dates.'); return }
+    if (form.to < form.from)      { setError('End date must be on or after start date.'); return }
 
     const hours = calcHours(form.from, form.to)
     if (hours <= 0) { setError('Invalid date range.'); return }
 
     const used = holidayUsed(form.employee)
     if (used + hours > TOTAL_HOLIDAY_HOURS) {
-      setError(`Not enough holiday hours. ${TOTAL_HOLIDAY_HOURS - used}h remaining for this employee.`)
+      setError(`Not enough hours — ${TOTAL_HOLIDAY_HOURS - used}h remaining for this employee.`)
       return
     }
 
@@ -69,7 +70,7 @@ export default function Holidays({ holidays, setHolidays }) {
             value={form.employee}
             onChange={e => setForm(f => ({ ...f, employee: e.target.value }))}
           >
-            {STAFF.map(s => (
+            {staff.map(s => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
@@ -99,7 +100,6 @@ export default function Holidays({ holidays, setHolidays }) {
           ≈ {calcHours(form.from, form.to)}h will be deducted
         </p>
       )}
-
       {error && <p className="error-msg">{error}</p>}
 
       <p className="section-title">Holiday log</p>
@@ -121,7 +121,7 @@ export default function Holidays({ holidays, setHolidays }) {
           </thead>
           <tbody>
             {sorted.map(h => {
-              const s = STAFF.find(x => x.id === h.employee)
+              const s = staff.find(x => x.id === h.employee)
               return (
                 <tr key={h.id}>
                   <td>
@@ -156,7 +156,7 @@ export default function Holidays({ holidays, setHolidays }) {
       )}
 
       <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-        {STAFF.map(s => {
+        {staff.map(s => {
           const used = holidayUsed(s.id)
           return (
             <div key={s.id} className="stat">

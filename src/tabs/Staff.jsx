@@ -1,6 +1,8 @@
-import { STAFF, TOTAL_HOLIDAY_HOURS } from '../data/constants'
+import { STAFF_META, TOTAL_HOLIDAY_HOURS } from '../data/constants'
 
-export default function Staff({ holidays }) {
+export default function Staff({ holidays, staffConfig }) {
+  const staff = STAFF_META.map(s => ({ ...s, ...staffConfig[s.id] }))
+
   function holidayUsed(empId) {
     return holidays
       .filter(h => h.employee === empId && h.status === 'approved')
@@ -35,7 +37,7 @@ export default function Staff({ holidays }) {
       <p className="section-title">Team members</p>
 
       <div className="staff-cards">
-        {STAFF.map(s => {
+        {staff.map(s => {
           const used = holidayUsed(s.id)
           const remaining = TOTAL_HOLIDAY_HOURS - used
           const pct = Math.min(100, Math.round((used / TOTAL_HOLIDAY_HOURS) * 100))

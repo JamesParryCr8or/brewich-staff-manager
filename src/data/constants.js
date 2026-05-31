@@ -1,8 +1,16 @@
-export const STAFF = [
-  { id: 'A', name: 'Employee A', role: 'Manager / Lead', avatarClass: 'av-a', fillColor: '#378ADD' },
-  { id: 'B', name: 'Employee B', role: 'Barista', avatarClass: 'av-b', fillColor: '#1D9E75' },
-  { id: 'C', name: 'Employee C', role: 'Barista', avatarClass: 'av-c', fillColor: '#BA7517' },
+export const STAFF_META = [
+  { id: 'A', avatarClass: 'av-a', fillColor: '#378ADD' },
+  { id: 'B', avatarClass: 'av-b', fillColor: '#1D9E75' },
+  { id: 'C', avatarClass: 'av-c', fillColor: '#BA7517' },
 ]
+
+export const NLW_RATE = 12.21
+
+export const INITIAL_STAFF_CONFIG = {
+  A: { name: 'Employee A', role: 'Manager / Lead', rate: NLW_RATE },
+  B: { name: 'Employee B', role: 'Barista',        rate: NLW_RATE },
+  C: { name: 'Employee C', role: 'Barista',        rate: NLW_RATE },
+}
 
 export const DAYS_SHORT = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -18,38 +26,40 @@ export const CELL_CONFIG = {
   holiday: { bg: '#FAEEDA', color: '#854F0B', label: 'HOL',    legendColor: '#EF9F27' },
 }
 
+// Days 0-3 = Tue–Fri (weekday) → 'work' | 'off'
+// Days 4-5 = Sat–Sun (weekend) → 'weekend' | 'off'
 export const INITIAL_ROTA = [
   [
-    { A: 'work', B: 'work',    C: 'work'    },
-    { A: 'work', B: 'work',    C: 'work'    },
-    { A: 'work', B: 'work',    C: 'off'     },
-    { A: 'work', B: 'off',     C: 'work'    },
-    { A: 'work', B: 'weekend', C: 'off'     },
-    { A: 'off',  B: 'off',     C: 'weekend' },
+    { A: 'work',    B: 'work',    C: 'work'    }, // Tue
+    { A: 'work',    B: 'work',    C: 'work'    }, // Wed
+    { A: 'work',    B: 'work',    C: 'off'     }, // Thu
+    { A: 'work',    B: 'off',     C: 'work'    }, // Fri
+    { A: 'weekend', B: 'weekend', C: 'off'     }, // Sat
+    { A: 'off',     B: 'off',     C: 'weekend' }, // Sun
   ],
   [
-    { A: 'work', B: 'work',    C: 'work' },
-    { A: 'work', B: 'off',     C: 'work' },
-    { A: 'off',  B: 'work',    C: 'work' },
-    { A: 'work', B: 'work',    C: 'off'  },
-    { A: 'off',  B: 'weekend', C: 'work' },
-    { A: 'work', B: 'off',     C: 'off'  },
+    { A: 'work',    B: 'work',    C: 'work'    }, // Tue
+    { A: 'work',    B: 'off',     C: 'work'    }, // Wed
+    { A: 'off',     B: 'work',    C: 'work'    }, // Thu
+    { A: 'work',    B: 'work',    C: 'off'     }, // Fri
+    { A: 'off',     B: 'weekend', C: 'weekend' }, // Sat
+    { A: 'weekend', B: 'off',     C: 'off'     }, // Sun
   ],
   [
-    { A: 'off',     B: 'work', C: 'work' },
-    { A: 'work',    B: 'work', C: 'work' },
-    { A: 'work',    B: 'work', C: 'off'  },
-    { A: 'work',    B: 'off',  C: 'work' },
-    { A: 'weekend', B: 'off',  C: 'work' },
-    { A: 'work',    B: 'work', C: 'off'  },
+    { A: 'off',     B: 'work',    C: 'work'    }, // Tue
+    { A: 'work',    B: 'work',    C: 'work'    }, // Wed
+    { A: 'work',    B: 'work',    C: 'off'     }, // Thu
+    { A: 'work',    B: 'off',     C: 'work'    }, // Fri
+    { A: 'weekend', B: 'off',     C: 'weekend' }, // Sat
+    { A: 'weekend', B: 'weekend', C: 'off'     }, // Sun
   ],
   [
-    { A: 'work', B: 'work',    C: 'work'    },
-    { A: 'work', B: 'work',    C: 'off'     },
-    { A: 'work', B: 'off',     C: 'work'    },
-    { A: 'off',  B: 'work',    C: 'work'    },
-    { A: 'work', B: 'weekend', C: 'off'     },
-    { A: 'off',  B: 'off',     C: 'weekend' },
+    { A: 'work',    B: 'work',    C: 'work'    }, // Tue
+    { A: 'work',    B: 'work',    C: 'off'     }, // Wed
+    { A: 'work',    B: 'off',     C: 'work'    }, // Thu
+    { A: 'off',     B: 'work',    C: 'work'    }, // Fri
+    { A: 'weekend', B: 'weekend', C: 'off'     }, // Sat
+    { A: 'off',     B: 'off',     C: 'weekend' }, // Sun
   ],
 ]
 
