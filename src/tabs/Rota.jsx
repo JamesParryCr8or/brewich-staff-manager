@@ -37,7 +37,7 @@ function effectiveState(empId, dateStr, rotaState, holidays) {
   return onHoliday ? 'holiday' : rotaState
 }
 
-export default function Rota({ rota, setRota, staffConfig, holidays }) {
+export default function Rota({ rota, setRota, staffConfig, holidays, isAdmin }) {
   const [weekOffset, setWeekOffset] = useState(0)
   const weekIdx   = ((weekOffset % 4) + 4) % 4
   const week      = rota[weekIdx]
@@ -68,6 +68,7 @@ export default function Rota({ rota, setRota, staffConfig, holidays }) {
     : `${MONTH_SHORT[startM]} – ${MONTH_SHORT[endM]} ${yr}`
 
   function toggleCell(empId, dayIdx) {
+    if (!isAdmin) return
     const dateStr = days[dayIdx].iso
     const cur = effectiveState(empId, dateStr, week[dayIdx][empId], holidays)
     if (cur === 'holiday') return
@@ -133,7 +134,7 @@ export default function Rota({ rota, setRota, staffConfig, holidays }) {
         </div>
         <button className="cal-nav-btn" onClick={() => setWeekOffset(o => o + 1)}>›</button>
         <button className="btn-add cal-today-btn" onClick={() => setWeekOffset(0)}>Today</button>
-        <button className="btn-add cal-export-btn" onClick={exportCSV}>↓ Export CSV</button>
+        {isAdmin && <button className="btn-add cal-export-btn" onClick={exportCSV}>↓ Export CSV</button>}
       </div>
 
       <div className="cal-grid">
@@ -153,6 +154,7 @@ export default function Rota({ rota, setRota, staffConfig, holidays }) {
             week={week}
             days={days}
             holidays={holidays}
+            isAdmin={isAdmin}
             isLast={si === staff.length - 1}
             onToggle={dayIdx => toggleCell(s.id, dayIdx)}
           />
@@ -187,7 +189,7 @@ export default function Rota({ rota, setRota, staffConfig, holidays }) {
   )
 }
 
-function RotaRow({ staff, week, days, holidays, isLast, onToggle }) {
+function RotaRow({ staff, week, days, holidays, isAdmin, isLast, onToggle }) {
   return (
     <>
       <div className={`cal-row-label${isLast ? ' cal-row-last' : ''}`}>
@@ -209,10 +211,11 @@ function RotaRow({ staff, week, days, holidays, isLast, onToggle }) {
             key={di}
             className={[
               'cal-cell',
-              days[di].isToday   ? 'cal-cell-today'       : '',
-              days[di].isWeekend ? 'cal-cell-weekend-col' : '',
-              isLast             ? 'cal-cell-last'        : '',
-              state === 'holiday'? 'cal-cell-holiday'     : '',
+              days[di].isToday    ? 'cal-cell-today'       : '',
+              days[di].isWeekend  ? 'cal-cell-weekend-col' : '',
+              isLast              ? 'cal-cell-last'        : '',
+              state === 'holiday' ? 'cal-cell-holiday'     : '',
+              !isAdmin            ? 'cal-cell-readonly'    : '',
             ].join(' ')}
             style={!isOff ? { background: cfg.bg } : undefined}
             onClick={() => onToggle(di)}

@@ -210,8 +210,10 @@ body {
   text-align: center;
   line-height: 1.4;
 }
-.cal-cell-holiday { cursor: default !important; }
-.cal-cell-holiday:hover { filter: none !important; }
+.cal-cell-holiday  { cursor: default !important; }
+.cal-cell-holiday:hover  { filter: none !important; }
+.cal-cell-readonly { cursor: default !important; }
+.cal-cell-readonly:hover { filter: none !important; }
 
 /* ── Stats ── */
 .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
@@ -349,8 +351,134 @@ select:focus, input:focus { outline: 2px solid #185FA5; outline-offset: 1px; }
 .empty { font-size: 13px; color: var(--color-text-tertiary); text-align: center; padding: 28px; }
 .error-msg { font-size: 12px; color: var(--color-text-danger); margin-bottom: 10px; padding: 8px 12px; background: var(--color-background-danger); border-radius: var(--border-radius-md); border: 1px solid var(--color-border-danger); }
 
+/* ── Auth chips ── */
+.auth-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  border: 1px solid var(--color-border-secondary);
+  background: none;
+  font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.auth-chip-view {
+  color: var(--color-text-secondary);
+  transition: background 0.1s, border-color 0.1s;
+}
+.auth-chip-view:hover { background: var(--color-background-secondary); border-color: var(--color-border-primary, #ccc); }
+.auth-chip-admin {
+  background: #E1F5EE;
+  border-color: #b3e9d4;
+  color: #0F6E56;
+  cursor: default;
+  font-weight: 500;
+}
+.auth-signout {
+  background: none;
+  border: none;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  padding: 0;
+  margin-left: 2px;
+  font-family: inherit;
+  text-decoration: underline;
+}
+.auth-signout:hover { color: var(--color-text-secondary); }
+
+.view-only-badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-tertiary);
+  border-radius: 10px;
+  padding: 2px 10px;
+  align-self: center;
+  margin-right: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Login modal ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  backdrop-filter: blur(2px);
+}
+.modal {
+  background: var(--color-background-primary);
+  border-radius: var(--border-radius-lg);
+  padding: 28px 28px 22px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+  text-align: center;
+}
+.modal-icon { font-size: 28px; margin-bottom: 10px; }
+.modal-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.modal-sub { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 18px; }
+.modal-input {
+  width: 100%;
+  font-size: 14px;
+  padding: 10px 12px;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-secondary);
+  background: var(--color-background-primary);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+.modal-input:focus { outline: 2px solid #1a73e8; outline-offset: 1px; }
+.modal-error { font-size: 12px; color: var(--color-text-danger); margin-top: 8px; }
+.modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+.modal-btn-primary {
+  flex: 1;
+  padding: 9px;
+  border-radius: var(--border-radius-md);
+  border: none;
+  background: #1a73e8;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s;
+}
+.modal-btn-primary:hover { background: #1557b0; }
+.modal-btn-secondary {
+  flex: 1;
+  padding: 9px;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--color-border-secondary);
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s;
+}
+.modal-btn-secondary:hover { background: var(--color-background-secondary); }
+.modal-note {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  margin-top: 14px;
+  line-height: 1.5;
+}
+
 /* ── Admin tab ── */
-.nav-btn-admin { margin-left: auto; }
 
 .rota-header-weekend { color: #3B6D11; }
 

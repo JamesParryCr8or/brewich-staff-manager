@@ -13,7 +13,7 @@ function fmt(dateStr) {
   return `${d}/${m}/${y}`
 }
 
-export default function Holidays({ holidays, setHolidays, staffConfig }) {
+export default function Holidays({ holidays, setHolidays, staffConfig, isAdmin }) {
   const staff = STAFF_META.map(s => ({ ...s, ...staffConfig[s.id] }))
   const [form, setForm] = useState({ employee: 'A', from: '', to: '' })
   const [error, setError] = useState('')
@@ -61,9 +61,8 @@ export default function Holidays({ holidays, setHolidays, staffConfig }) {
 
   return (
     <div>
-      <p className="section-title">Request holiday</p>
-
-      <div className="form-row">
+      {isAdmin && <p className="section-title">Request holiday</p>}
+      {isAdmin && <div className="form-row">
         <div className="form-group">
           <label className="form-label">Employee</label>
           <select
@@ -93,14 +92,14 @@ export default function Holidays({ holidays, setHolidays, staffConfig }) {
           />
         </div>
         <button className="btn-add" onClick={handleSubmit}>+ Add request</button>
-      </div>
+      </div>}
 
-      {form.from && form.to && form.to >= form.from && (
+      {isAdmin && form.from && form.to && form.to >= form.from && (
         <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 10, marginTop: -8 }}>
           ≈ {calcHours(form.from, form.to)}h will be deducted
         </p>
       )}
-      {error && <p className="error-msg">{error}</p>}
+      {isAdmin && error && <p className="error-msg">{error}</p>}
 
       <p className="section-title">Holiday log</p>
 
@@ -140,13 +139,16 @@ export default function Holidays({ holidays, setHolidays, staffConfig }) {
                     <span className={`status-pill pill-${h.status}`}>{h.status}</span>
                   </td>
                   <td style={{ whiteSpace: 'nowrap' }}>
-                    {h.status === 'pending' && (
+                    {isAdmin && h.status === 'pending' && (
                       <>
                         <button className="btn-sm approve" onClick={() => approve(h.id)}>Approve</button>
                         <button className="btn-sm reject"  onClick={() => reject(h.id)}>Reject</button>
                       </>
                     )}
-                    <button className="btn-sm danger" onClick={() => remove(h.id)}>Remove</button>
+                    {isAdmin && (
+                      <button className="btn-sm danger" onClick={() => remove(h.id)}>Remove</button>
+                    )}
+                    {!isAdmin && <span style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>—</span>}
                   </td>
                 </tr>
               )
