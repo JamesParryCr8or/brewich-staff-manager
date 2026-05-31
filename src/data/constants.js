@@ -4,7 +4,7 @@ export const STAFF_META = [
   { id: 'C', avatarClass: 'av-c', fillColor: '#BA7517' },
 ]
 
-export const NLW_RATE = 12.21
+export const NLW_RATE = 12.71
 
 export const INITIAL_STAFF_CONFIG = {
   A: { name: 'Employee A', role: 'Manager / Lead', rate: NLW_RATE },

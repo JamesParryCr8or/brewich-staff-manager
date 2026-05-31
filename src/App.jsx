@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { INITIAL_ROTA, INITIAL_HOLIDAYS, INITIAL_STAFF_CONFIG } from './data/constants'
 import { getIsAdmin, setAdmin } from './auth'
 import LoginModal from './components/LoginModal'
+import SharedRotaView from './components/SharedRotaView'
 import Rota from './tabs/Rota'
 import Staff from './tabs/Staff'
 import Holidays from './tabs/Holidays'
@@ -16,7 +17,30 @@ const today = new Date().toLocaleDateString('en-GB', {
   weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
 })
 
+// ── URL-based share encoding ──────────────────────────────────────────────
+export function encodeShare(data) {
+  const json  = JSON.stringify(data)
+  const bytes = new TextEncoder().encode(json)
+  return btoa(String.fromCharCode(...bytes))
+}
+
+function decodeShare(str) {
+  try {
+    const binary = atob(str)
+    const bytes  = Uint8Array.from(binary, c => c.charCodeAt(0))
+    return JSON.parse(new TextDecoder().decode(bytes))
+  } catch {
+    return null
+  }
+}
+
 export default function App() {
+  // Detect ?share= param — show static snapshot if present
+  const sharedData = useMemo(() => {
+    const param = new URLSearchParams(window.location.search).get('share')
+    return param ? decodeShare(param) : null
+  }, [])
+
   const [isAdmin, setIsAdmin]         = useState(getIsAdmin)
   const [showLogin, setShowLogin]     = useState(false)
   const [activeTab, setActiveTab]     = useState('Rota')
@@ -25,6 +49,25 @@ export default function App() {
   const [holidays, setHolidays]       = useLocalStorage('brewch_holidays', INITIAL_HOLIDAYS)
   const [staffConfig, setStaffConfig] = useLocalStorage('brewch_staff', INITIAL_STAFF_CONFIG)
   const [payRuns, setPayRuns]         = useLocalStorage('brewch_payruns', [])
+
+  // ── Shared snapshot view ────────────────────────────────────────────────
+  if (sharedData?.v === 1) {
+    return (
+      <div className="app">
+        <header className="topbar" style={{ gap: 10 }}>
+          <img src="/Logo.svg" alt="Brewch" className="topbar-logo" />
+          <span className="topbar-divider" />
+          <span className="topbar-title">Staff Manager</span>
+          <span className="topbar-sub" style={{ marginLeft: 'auto' }}>
+            Shared snapshot
+          </span>
+        </header>
+        <main>
+          <SharedRotaView data={sharedData} />
+        </main>
+      </div>
+    )
+  }
 
   const tabs = isAdmin ? ALL_TABS : PUBLIC_TABS
 
@@ -77,8 +120,14 @@ export default function App() {
       </nav>
 
       <main className="content">
-        {activeTab === 'Rota'     && (
-          <Rota rota={rota} setRota={setRota} staffConfig={staffConfig} holidays={holidays} isAdmin={isAdmin} />
+        {activeTab === 'Rota' && (
+          <Rota
+            rota={rota}
+            setRota={setRota}
+            staffConfig={staffConfig}
+            holidays={holidays}
+            isAdmin={isAdmin}
+          />
         )}
         {activeTab === 'Staff'    && <Staff holidays={holidays} staffConfig={staffConfig} />}
         {activeTab === 'Holidays' && (
@@ -97,10 +146,7 @@ export default function App() {
       </main>
 
       {showLogin && (
-        <LoginModal
-          onSuccess={handleLogin}
-          onClose={() => setShowLogin(false)}
-        />
+        <LoginModal onSuccess={handleLogin} onClose={() => setShowLogin(false)} />
       )}
     </div>
   )

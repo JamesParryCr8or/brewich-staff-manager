@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { STAFF_META, CELL_CONFIG, SHIFT_HOURS } from '../data/constants'
+import { encodeShare } from '../App'
+import ShareModal from '../components/ShareModal'
 
 const WEEKEND_DAYS = new Set([4, 5])
 const DAY_NAMES   = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -39,6 +41,7 @@ function effectiveState(empId, dateStr, rotaState, holidays) {
 
 export default function Rota({ rota, setRota, staffConfig, holidays, isAdmin }) {
   const [weekOffset, setWeekOffset] = useState(0)
+  const [shareUrl, setShareUrl]     = useState(null)
   const weekIdx   = ((weekOffset % 4) + 4) % 4
   const week      = rota[weekIdx]
   const staff     = STAFF_META.map(s => ({ ...s, ...staffConfig[s.id] }))
@@ -118,6 +121,22 @@ export default function Rota({ rota, setRota, staffConfig, holidays, isAdmin }) 
     URL.revokeObjectURL(a.href)
   }
 
+  function openShare() {
+    const data = {
+      v: 1,
+      generated: toISO(new Date()),
+      weekLabel: monthDisplay,
+      rotaWeek:  weekIdx + 1,
+      days: days.map(d => ({ short: d.short, dayNum: d.dayNum, monthShort: MONTH_SHORT[d.monthIdx] })),
+      rows: staff.map(s => ({
+        id:     s.id,
+        name:   s.name,
+        shifts: days.map((d, di) => effectiveState(s.id, d.iso, week[di][s.id], holidays)),
+      })),
+    }
+    setShareUrl(`${window.location.origin}/?share=${encodeShare(data)}`)
+  }
+
   const teamHours = staff.reduce((s, e) => s + hoursFor(e.id), 0)
   const teamPay   = staff.reduce((s, e) => s + hoursFor(e.id) * e.rate, 0)
   const totalShifts = days.reduce((sum, d, di) =>
@@ -134,7 +153,8 @@ export default function Rota({ rota, setRota, staffConfig, holidays, isAdmin }) 
         </div>
         <button className="cal-nav-btn" onClick={() => setWeekOffset(o => o + 1)}>›</button>
         <button className="btn-add cal-today-btn" onClick={() => setWeekOffset(0)}>Today</button>
-        {isAdmin && <button className="btn-add cal-export-btn" onClick={exportCSV}>↓ Export CSV</button>}
+        <button className="btn-add cal-share-btn" onClick={openShare}>🔗 Share</button>
+        {isAdmin && <button className="btn-add cal-export-btn" onClick={exportCSV}>↓ CSV</button>}
       </div>
 
       <div className="cal-grid">
@@ -183,8 +203,16 @@ export default function Rota({ rota, setRota, staffConfig, holidays, isAdmin }) 
       </div>
 
       <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 8 }}>
-        Approved holidays overlay the rota automatically. Click any non-holiday cell to toggle on / off.
+        Approved holidays overlay the rota automatically.{isAdmin ? ' Click any non-holiday cell to toggle on / off.' : ''}
       </p>
+
+      {shareUrl && (
+        <ShareModal
+          url={shareUrl}
+          weekLabel={monthDisplay}
+          onClose={() => setShareUrl(null)}
+        />
+      )}
     </div>
   )
 }

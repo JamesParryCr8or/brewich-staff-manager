@@ -478,6 +478,29 @@ select:focus, input:focus { outline: 2px solid #185FA5; outline-offset: 1px; }
   line-height: 1.5;
 }
 
+/* Share URL display */
+.share-url-box {
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: var(--border-radius-md);
+  padding: 10px 12px;
+  margin-top: 12px;
+  word-break: break-all;
+  text-align: left;
+}
+.share-url-text { font-size: 11px; color: var(--color-text-secondary); font-family: monospace; }
+
+/* Shared snapshot header */
+.shared-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0 16px;
+  border-bottom: 1px solid var(--color-border-tertiary);
+  margin-bottom: 0;
+}
+.cal-share-btn { font-size: 12px; }
+
 /* ── Admin tab ── */
 
 .rota-header-weekend { color: #3B6D11; }
