@@ -1,0 +1,377 @@
+
+<h2 class="sr-only">Brewch staff management MVP — rota builder, holiday tracker, and shift overview for three employees</h2>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); color: var(--color-text-primary); }
+.app { display: flex; flex-direction: column; gap: 0; min-height: 600px; }
+.topbar { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-bottom: 0.5px solid var(--color-border-tertiary); background: var(--color-background-primary); }
+.topbar-title { font-size: 15px; font-weight: 500; }
+.topbar-sub { font-size: 13px; color: var(--color-text-secondary); margin-left: auto; }
+.nav { display: flex; gap: 0; border-bottom: 0.5px solid var(--color-border-tertiary); background: var(--color-background-primary); }
+.nav-btn { padding: 10px 18px; font-size: 13px; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; color: var(--color-text-secondary); transition: all 0.15s; }
+.nav-btn.active { color: var(--color-text-primary); border-bottom-color: var(--color-text-primary); font-weight: 500; }
+.nav-btn:hover { color: var(--color-text-primary); }
+.content { padding: 20px; flex: 1; }
+.section-title { font-size: 14px; font-weight: 500; margin-bottom: 14px; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+
+.rota-grid { display: grid; grid-template-columns: 80px repeat(6, 1fr); gap: 3px; }
+.rota-header { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); text-align: center; padding: 6px 2px; }
+.rota-name { font-size: 13px; font-weight: 500; display: flex; align-items: center; padding: 4px 0; }
+.rota-cell { border-radius: var(--border-radius-md); padding: 6px 4px; text-align: center; font-size: 11px; font-weight: 500; cursor: pointer; user-select: none; transition: opacity 0.1s; min-height: 36px; display: flex; align-items: center; justify-content: center; }
+.rota-cell:hover { opacity: 0.8; }
+.cell-work { background: #E1F5EE; color: #0F6E56; }
+.cell-off { background: var(--color-background-secondary); color: var(--color-text-tertiary); }
+.cell-holiday { background: #FAEEDA; color: #854F0B; }
+.cell-weekend { background: #EAF3DE; color: #3B6D11; }
+
+.stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.stat { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px; }
+.stat-label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 4px; }
+.stat-val { font-size: 20px; font-weight: 500; }
+.stat-sub { font-size: 11px; color: var(--color-text-tertiary); margin-top: 2px; }
+
+.staff-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.staff-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 16px; }
+.staff-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; margin-bottom: 10px; }
+.av-a { background: #E6F1FB; color: #185FA5; }
+.av-b { background: #E1F5EE; color: #0F6E56; }
+.av-c { background: #FAEEDA; color: #854F0B; }
+.staff-name { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+.staff-role { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 12px; }
+.progress-bar { height: 4px; background: var(--color-border-tertiary); border-radius: 4px; margin-bottom: 4px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 4px; }
+.progress-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--color-text-secondary); margin-bottom: 10px; }
+.staff-meta { font-size: 11px; color: var(--color-text-tertiary); border-top: 0.5px solid var(--color-border-tertiary); padding-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+.badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+.badge-manager { background: #E6F1FB; color: #185FA5; }
+.badge-staff { background: var(--color-background-secondary); color: var(--color-text-secondary); }
+
+.holiday-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.holiday-table th { text-align: left; font-size: 11px; font-weight: 500; color: var(--color-text-secondary); padding: 0 12px 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+.holiday-table td { padding: 10px 12px; border-top: 0.5px solid var(--color-border-tertiary); }
+.holiday-table tr:hover td { background: var(--color-background-secondary); }
+.status-pill { display: inline-block; font-size: 11px; padding: 2px 10px; border-radius: 10px; font-weight: 500; }
+.pill-approved { background: #E1F5EE; color: #0F6E56; }
+.pill-pending { background: #FAEEDA; color: #854F0B; }
+.pill-denied { background: #FCEBEB; color: #A32D2D; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 16px; padding: 14px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-label { font-size: 11px; color: var(--color-text-secondary); font-weight: 500; }
+select, input[type=date] { font-size: 13px; padding: 7px 10px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); width: 100%; }
+.btn-add { font-size: 13px; padding: 7px 16px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer; white-space: nowrap; }
+.btn-add:hover { background: var(--color-background-secondary); }
+.btn-danger { color: var(--color-text-danger); border-color: var(--color-border-danger); }
+.btn-danger:hover { background: var(--color-background-danger); }
+.btn-sm { font-size: 11px; padding: 3px 10px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); background: none; color: var(--color-text-secondary); cursor: pointer; }
+.btn-sm:hover { background: var(--color-background-secondary); color: var(--color-text-primary); }
+
+.week-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.week-nav span { font-size: 14px; font-weight: 500; }
+.legend { display: flex; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--color-text-secondary); }
+.legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+.rule-list { display: flex; flex-direction: column; gap: 8px; }
+.rule-item { padding: 10px 14px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.rule-icon { font-size: 16px; color: var(--color-text-tertiary); flex-shrink: 0; }
+.rule-text { flex: 1; }
+.rule-val { font-size: 12px; font-weight: 500; color: var(--color-text-secondary); }
+
+.empty { font-size: 13px; color: var(--color-text-tertiary); text-align: center; padding: 24px; }
+</style>
+
+<div class="app" id="app">
+  <div class="topbar">
+    <i class="ti ti-coffee" style="font-size:20px;" aria-hidden="true"></i>
+    <span class="topbar-title">Brewch Staff Manager</span>
+    <span class="topbar-sub" id="live-date"></span>
+  </div>
+  <div class="nav">
+    <button class="nav-btn active" onclick="showTab('rota')">Rota</button>
+    <button class="nav-btn" onclick="showTab('staff')">Staff</button>
+    <button class="nav-btn" onclick="showTab('holidays')">Holidays</button>
+    <button class="nav-btn" onclick="showTab('rules')">Policy</button>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<script>
+const DAYS = ['Tue','Wed','Thu','Fri','Sat','Sun'];
+const FULL_DAYS = ['Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const TOTAL_HOLIDAY = 122;
+const WEEKLY_HOURS = 6;
+
+const staff = [
+  { id: 'A', name: 'Employee A', role: 'Manager / Lead', avatar: 'av-a', holidayUsed: 24, phase: 3 },
+  { id: 'B', name: 'Employee B', role: 'Barista', avatar: 'av-b', holidayUsed: 12, phase: 3 },
+  { id: 'C', name: 'Employee C', role: 'Barista', avatar: 'av-c', holidayUsed: 6, phase: 3 },
+];
+
+const WEEK_TEMPLATES = [
+  [
+    { A: 'work', B: 'work', C: 'work' },
+    { A: 'work', B: 'work', C: 'work' },
+    { A: 'work', B: 'work', C: 'off' },
+    { A: 'work', B: 'off', C: 'work' },
+    { A: 'work', B: 'weekend', C: 'off' },
+    { A: 'off', B: 'off', C: 'weekend' },
+  ],
+  [
+    { A: 'work', B: 'work', C: 'work' },
+    { A: 'work', B: 'off', C: 'work' },
+    { A: 'off', B: 'work', C: 'work' },
+    { A: 'work', B: 'work', C: 'off' },
+    { A: 'off', B: 'weekend', C: 'work' },
+    { A: 'work', B: 'off', C: 'off' },
+  ],
+  [
+    { A: 'off', B: 'work', C: 'work' },
+    { A: 'work', B: 'work', C: 'work' },
+    { A: 'work', B: 'work', C: 'off' },
+    { A: 'work', B: 'off', C: 'work' },
+    { A: 'weekend', B: 'off', C: 'work' },
+    { A: 'work', B: 'work', C: 'off' },
+  ],
+  [
+    { A: 'work', B: 'work', C: 'work' },
+    { A: 'work', B: 'work', C: 'off' },
+    { A: 'work', B: 'off', C: 'work' },
+    { A: 'off', B: 'work', C: 'work' },
+    { A: 'work', B: 'weekend', C: 'off' },
+    { A: 'off', B: 'off', C: 'weekend' },
+  ],
+];
+
+let rota = JSON.parse(JSON.stringify(WEEK_TEMPLATES));
+let weekOffset = 0;
+
+let holidays = [
+  { id: 1, employee: 'B', from: '2025-08-04', to: '2025-08-08', hours: 24, status: 'approved', type: 'week' },
+  { id: 2, employee: 'C', from: '2025-09-01', to: '2025-09-05', hours: 24, status: 'pending', type: 'week' },
+  { id: 3, employee: 'A', from: '2025-07-21', to: '2025-07-21', hours: 6, status: 'approved', type: 'weekend' },
+];
+let nextHolId = 4;
+let activeTab = 'rota';
+
+function showTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.nav-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['rota','staff','holidays','rules'][i] === tab);
+  });
+  render();
+}
+
+function render() {
+  const el = document.getElementById('content');
+  if (activeTab === 'rota') el.innerHTML = renderRota();
+  else if (activeTab === 'staff') el.innerHTML = renderStaff();
+  else if (activeTab === 'holidays') el.innerHTML = renderHolidays();
+  else el.innerHTML = renderRules();
+  bindEvents();
+}
+
+function renderRota() {
+  const weekIdx = ((weekOffset % 4) + 4) % 4;
+  const week = rota[weekIdx];
+  const totalShifts = week.reduce((sum, day) => {
+    return sum + (day.A !== 'off' ? 1 : 0) + (day.B !== 'off' ? 1 : 0) + (day.C !== 'off' ? 1 : 0);
+  }, 0);
+
+  let grid = `<div class="rota-grid">
+    <div class="rota-header"></div>
+    ${DAYS.map(d => `<div class="rota-header">${d}</div>`).join('')}`;
+
+  ['A','B','C'].forEach(id => {
+    const s = staff.find(x => x.id === id);
+    const shifts = week.filter(d => d[id] !== 'off').length;
+    const hrs = shifts * 6;
+    grid += `<div class="rota-name"><div class="staff-avatar ${s.avatar}" style="width:28px;height:28px;font-size:11px;">${id}</div></div>`;
+    week.forEach((day, di) => {
+      const state = day[id];
+      const cls = state === 'off' ? 'cell-off' : state === 'holiday' ? 'cell-holiday' : state === 'weekend' ? 'cell-weekend' : 'cell-work';
+      const label = state === 'off' ? 'OFF' : state === 'holiday' ? 'HOL' : '9–3:20';
+      grid += `<div class="rota-cell ${cls}" data-emp="${id}" data-day="${di}" title="Click to toggle">${label}</div>`;
+    });
+  });
+  grid += `</div>`;
+
+  const hoursA = week.filter(d => d.A !== 'off').length * 6;
+  const hoursB = week.filter(d => d.B !== 'off').length * 6;
+  const hoursC = week.filter(d => d.C !== 'off').length * 6;
+
+  return `
+    <div class="week-nav">
+      <button class="btn-add" onclick="changeWeek(-1)"><i class="ti ti-chevron-left"></i></button>
+      <span>Week ${weekIdx + 1} of 4</span>
+      <button class="btn-add" onclick="changeWeek(1)"><i class="ti ti-chevron-right"></i></button>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#5DCAA5"></div> Weekday shift</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#97C459"></div> Weekend shift</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#EF9F27"></div> Holiday</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--color-border-tertiary)"></div> Day off</div>
+    </div>
+    ${grid}
+    <div class="stat-row" style="margin-top:16px;">
+      <div class="stat"><div class="stat-label">A this week</div><div class="stat-val">${hoursA}h</div><div class="stat-sub">${hoursA / 6} shifts</div></div>
+      <div class="stat"><div class="stat-label">B this week</div><div class="stat-val">${hoursB}h</div><div class="stat-sub">${hoursB / 6} shifts</div></div>
+      <div class="stat"><div class="stat-label">C this week</div><div class="stat-val">${hoursC}h</div><div class="stat-sub">${hoursC / 6} shifts</div></div>
+      <div class="stat"><div class="stat-label">Team hours</div><div class="stat-val">${hoursA + hoursB + hoursC}h</div><div class="stat-sub">${totalShifts} shifts total</div></div>
+    </div>
+    <p style="font-size:11px;color:var(--color-text-tertiary);margin-top:6px;">Click any cell to toggle shift state. Changes are reflected in weekly totals.</p>`;
+}
+
+function renderStaff() {
+  const cards = staff.map(s => {
+    const remaining = TOTAL_HOLIDAY - s.holidayUsed;
+    const pct = Math.round((s.holidayUsed / TOTAL_HOLIDAY) * 100);
+    const fillColor = s.id === 'A' ? '#378ADD' : s.id === 'B' ? '#1D9E75' : '#BA7517';
+    return `<div class="staff-card">
+      <div class="staff-avatar ${s.avatar}">${s.id}</div>
+      <div class="staff-name">${s.name} ${s.id === 'A' ? '<span class="badge badge-manager">manager</span>' : '<span class="badge badge-staff">staff</span>'}</div>
+      <div class="staff-role">${s.role}</div>
+      <div class="progress-label"><span>Holiday used</span><span>${s.holidayUsed}h / ${TOTAL_HOLIDAY}h</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${fillColor};"></div></div>
+      <div class="progress-label"><span style="color:var(--color-text-tertiary);">${remaining}h remaining</span><span>${Math.round((remaining / 25))}+ weeks left</span></div>
+      <div class="staff-meta">
+        <span><i class="ti ti-clock" style="font-size:12px;vertical-align:-1px;" aria-hidden="true"></i> 9:00am – 3:20pm shifts</span>
+        <span><i class="ti ti-coffee" style="font-size:12px;vertical-align:-1px;" aria-hidden="true"></i> 20-min unpaid break per shift</span>
+        <span><i class="ti ti-calendar" style="font-size:12px;vertical-align:-1px;" aria-hidden="true"></i> Min 1 weekend day / week</span>
+      </div>
+    </div>`;
+  });
+
+  return `
+    <div class="stat-row">
+      <div class="stat"><div class="stat-label">Team size</div><div class="stat-val">3</div><div class="stat-sub">Phase 3 — full rota</div></div>
+      <div class="stat"><div class="stat-label">Avg weekly hrs</div><div class="stat-val">27h</div><div class="stat-sub">per employee</div></div>
+      <div class="stat"><div class="stat-label">Holiday / employee</div><div class="stat-val">122h</div><div class="stat-sub">≈ 4.9 weeks</div></div>
+      <div class="stat"><div class="stat-label">1 week leave =</div><div class="stat-val">25h</div><div class="stat-sub">Weekend = 6h</div></div>
+    </div>
+    <p class="section-title">Team members</p>
+    <div class="staff-cards">${cards.join('')}</div>`;
+}
+
+function renderHolidays() {
+  const used = (id) => holidays.filter(h => h.employee === id && h.status === 'approved').reduce((s, h) => s + h.hours, 0);
+  const rows = holidays.map(h => {
+    const s = staff.find(x => x.id === h.employee);
+    const pillCls = h.status === 'approved' ? 'pill-approved' : h.status === 'pending' ? 'pill-pending' : 'pill-denied';
+    return `<tr>
+      <td><div class="staff-avatar ${s.avatar}" style="width:26px;height:26px;font-size:11px;display:inline-flex;">${h.employee}</div></td>
+      <td>${s.name}</td>
+      <td>${h.from}</td>
+      <td>${h.to}</td>
+      <td>${h.hours}h</td>
+      <td><span class="status-pill ${pillCls}">${h.status}</span></td>
+      <td>
+        ${h.status === 'pending' ? `<button class="btn-sm" onclick="approveHol(${h.id})">Approve</button> ` : ''}
+        <button class="btn-sm btn-danger" onclick="deleteHol(${h.id})">Remove</button>
+      </td>
+    </tr>`;
+  });
+
+  return `
+    <p class="section-title">Request holiday</p>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Employee</label>
+        <select id="hol-emp"><option value="A">Employee A</option><option value="B">Employee B</option><option value="C">Employee C</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">From</label><input type="date" id="hol-from"></div>
+      <div class="form-group"><label class="form-label">To</label><input type="date" id="hol-to"></div>
+      <button class="btn-add" onclick="addHoliday()"><i class="ti ti-plus"></i> Add</button>
+    </div>
+    <p class="section-title">Holiday log</p>
+    ${rows.length > 0
+      ? `<table class="holiday-table"><thead><tr><th></th><th>Employee</th><th>From</th><th>To</th><th>Hours</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.join('')}</tbody></table>`
+      : '<div class="empty">No holiday requests yet.</div>'
+    }
+    <div style="margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+      ${staff.map(s => {
+        const u = used(s.id);
+        return `<div class="stat"><div class="stat-label">${s.name}</div><div class="stat-val">${TOTAL_HOLIDAY - u}h left</div><div class="stat-sub">${u}h used of ${TOTAL_HOLIDAY}h</div></div>`;
+      }).join('')}
+    </div>`;
+}
+
+function renderRules() {
+  const rules = [
+    { icon: 'ti-clock', text: 'Standard shift hours', val: '9:00am – 3:20pm (6 paid hrs)' },
+    { icon: 'ti-coffee', text: 'Break per shift', val: '20 min unpaid (or 2× 10 min)' },
+    { icon: 'ti-calendar', text: 'Average shifts per week', val: '4 days / week' },
+    { icon: 'ti-beach', text: 'Annual holiday entitlement', val: '122 hours per employee' },
+    { icon: 'ti-calendar-week', text: '1 week of leave', val: '25 holiday hours' },
+    { icon: 'ti-calendar-event', text: 'Full weekend off', val: '6 holiday hours' },
+    { icon: 'ti-arrows-horizontal', text: 'Weekly hours range', val: '24h min – 36h max (avg 27h)' },
+    { icon: 'ti-calendar-check', text: 'Holiday notice required', val: '4 weeks in advance' },
+    { icon: 'ti-users', text: 'Simultaneous leave', val: 'Not permitted without approval' },
+    { icon: 'ti-rotate', text: 'Holiday blocks', val: '1 or 2 weeks standard; longer needs approval' },
+    { icon: 'ti-alert-circle', text: 'Sick leave — fit note required', val: 'After 7 consecutive calendar days' },
+    { icon: 'ti-calendar-minus', text: 'Annual quiet period', val: '~1 month reduced hours (rotational)' },
+    { icon: 'ti-building-store', text: 'Weekend cover', val: 'Minimum 1 weekend day per week' },
+    { icon: 'ti-clock-exclamation', text: 'Absence notification', val: 'Before shift start, as early as possible' },
+    { icon: 'ti-file-text', text: 'Holiday accrual (year 1)', val: 'Must be accrued before taken' },
+  ];
+  return `
+    <p class="section-title">Employment policy — key rules</p>
+    <div class="rule-list">
+      ${rules.map(r => `<div class="rule-item">
+        <i class="ti ${r.icon} rule-icon" aria-hidden="true"></i>
+        <span class="rule-text">${r.text}</span>
+        <span class="rule-val">${r.val}</span>
+      </div>`).join('')}
+    </div>
+    <p style="font-size:11px;color:var(--color-text-tertiary);margin-top:14px;">All rules derived from the signed Brewch staffing, employment & annual leave policy. This view is read-only reference.</p>`;
+}
+
+function changeWeek(dir) { weekOffset += dir; render(); }
+
+function toggleCell(emp, dayIdx) {
+  const weekIdx = ((weekOffset % 4) + 4) % 4;
+  const states = ['work', 'weekend', 'off'];
+  const cur = rota[weekIdx][dayIdx][emp];
+  const next = states[(states.indexOf(cur) + 1) % states.length];
+  rota[weekIdx][dayIdx][emp] = next;
+  render();
+}
+
+function addHoliday() {
+  const emp = document.getElementById('hol-emp').value;
+  const from = document.getElementById('hol-from').value;
+  const to = document.getElementById('hol-to').value;
+  if (!from || !to) return;
+  const days = Math.round((new Date(to) - new Date(from)) / 86400000) + 1;
+  const isWeekend = days <= 2;
+  const hours = isWeekend ? 6 : Math.ceil(days / 5) * 25;
+  const s = staff.find(x => x.id === emp);
+  if (s.holidayUsed + hours > TOTAL_HOLIDAY) { alert('Not enough holiday hours remaining.'); return; }
+  holidays.push({ id: nextHolId++, employee: emp, from, to, hours, status: 'pending', type: isWeekend ? 'weekend' : 'week' });
+  render();
+}
+
+function approveHol(id) {
+  const h = holidays.find(x => x.id === id);
+  if (h) { h.status = 'approved'; const s = staff.find(x => x.id === h.employee); s.holidayUsed += h.hours; }
+  render();
+}
+
+function deleteHol(id) {
+  const h = holidays.find(x => x.id === id);
+  if (h && h.status === 'approved') { const s = staff.find(x => x.id === h.employee); s.holidayUsed -= h.hours; }
+  holidays = holidays.filter(x => x.id !== id);
+  render();
+}
+
+function bindEvents() {
+  document.querySelectorAll('.rota-cell').forEach(cell => {
+    cell.addEventListener('click', () => toggleCell(cell.dataset.emp, parseInt(cell.dataset.day)));
+  });
+}
+
+const d = new Date();
+document.getElementById('live-date').textContent = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+
+render();
+</script>
