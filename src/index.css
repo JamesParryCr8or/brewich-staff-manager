@@ -69,43 +69,147 @@ body {
   margin-bottom: 12px;
 }
 
-/* ── Rota grid ── */
-.week-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-.week-nav span { font-size: 14px; font-weight: 500; }
-
-.legend { display: flex; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
-.legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--color-text-secondary); }
-.legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
-
-.rota-grid {
-  display: grid;
-  grid-template-columns: 90px repeat(6, 1fr);
-  gap: 3px;
+/* ── Calendar (Rota) ── */
+.cal-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
-.rota-header {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  text-align: center;
-  padding: 6px 2px;
+.cal-nav-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 140px;
 }
-.rota-name { display: flex; align-items: center; padding: 4px 0; }
-.rota-cell {
+.cal-month { font-size: 18px; font-weight: 600; line-height: 1.2; }
+.cal-week-badge { font-size: 11px; color: var(--color-text-tertiary); margin-top: 1px; }
+.cal-nav-btn {
+  font-size: 20px;
+  line-height: 1;
+  padding: 6px 12px;
   border-radius: var(--border-radius-md);
-  padding: 6px 4px;
-  text-align: center;
-  font-size: 11px;
-  font-weight: 500;
+  border: 1px solid var(--color-border-secondary);
+  background: none;
   cursor: pointer;
-  user-select: none;
-  transition: opacity 0.1s, transform 0.1s;
-  min-height: 36px;
+  color: var(--color-text-primary);
+  transition: background 0.1s;
+}
+.cal-nav-btn:hover { background: var(--color-background-secondary); }
+.cal-today-btn  { font-size: 12px; }
+.cal-export-btn { font-size: 12px; margin-left: 4px; }
+
+/* Grid container */
+.cal-grid {
+  display: grid;
+  grid-template-columns: 140px repeat(6, 1fr);
+  border: 1px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+/* Top-left corner cell */
+.cal-corner {
+  background: var(--color-background-secondary);
+  border-right: 1px solid var(--color-border-tertiary);
+  border-bottom: 1px solid var(--color-border-tertiary);
+}
+
+/* Day header cells */
+.cal-day-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 4px 8px;
+  background: var(--color-background-secondary);
+  border-right: 1px solid var(--color-border-tertiary);
+  border-bottom: 1px solid var(--color-border-tertiary);
+}
+.cal-day-header:last-child { border-right: none; }
+.cal-hdr-name {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+.cal-hdr-weekend .cal-hdr-name { color: #3B6D11; }
+.cal-hdr-today  .cal-hdr-name { color: #1a73e8; }
+.cal-hdr-num {
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 1;
+  margin-top: 4px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 50%;
+  color: var(--color-text-primary);
 }
-.rota-cell:hover { opacity: 0.78; }
-.rota-cell:active { transform: scale(0.96); }
+.cal-hdr-num-today {
+  background: #1a73e8;
+  color: #fff;
+  font-weight: 500;
+}
+.cal-hdr-month {
+  font-size: 9px;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 1px;
+}
+
+/* Employee name column */
+.cal-row-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-right: 1px solid var(--color-border-tertiary);
+  border-bottom: 1px solid var(--color-border-tertiary);
+  background: var(--color-background-primary);
+}
+.cal-row-label.cal-row-last { border-bottom: none; }
+.cal-name {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text-primary);
+}
+
+/* Shift cells */
+.cal-cell {
+  min-height: 72px;
+  border-right: 1px solid var(--color-border-tertiary);
+  border-bottom: 1px solid var(--color-border-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  background: var(--color-background-primary);
+  transition: filter 0.12s;
+  user-select: none;
+}
+.cal-cell:last-child { border-right: none; }
+.cal-cell.cal-cell-last { border-bottom: none; }
+.cal-cell:hover { filter: brightness(0.95); }
+.cal-cell-today { background: #f3f8ff !important; }
+.cal-cell-weekend-col { background: #fafdf6; }
+.cal-cell-today.cal-cell-weekend-col { background: #f0f8e8 !important; }
+.cal-cell-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.4;
+}
 
 /* ── Stats ── */
 .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
@@ -287,10 +391,16 @@ select:focus, input:focus { outline: 2px solid #185FA5; outline-offset: 1px; }
 .pay-preview-total { font-weight: 500; padding-top: 8px; }
 .pay-preview-row span:last-child { text-align: right; }
 
-@media (max-width: 640px) {
+@media (max-width: 700px) {
   .stat-row { grid-template-columns: repeat(2, 1fr); }
   .staff-cards { grid-template-columns: 1fr; }
+  .admin-staff-grid { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr 1fr; }
   .form-row .btn-add { grid-column: span 2; }
-  .rota-grid { grid-template-columns: 56px repeat(6, 1fr); font-size: 10px; }
+  .cal-grid { grid-template-columns: 80px repeat(6, 1fr); }
+  .cal-name { font-size: 10px; }
+  .cal-hdr-num { font-size: 16px; width: 28px; height: 28px; }
+  .cal-cell { min-height: 52px; }
+  .cal-row-label { padding: 8px 6px; gap: 4px; }
+  .cal-export-btn { display: none; }
 }
