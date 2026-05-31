@@ -42,7 +42,7 @@ export default function App() {
       </nav>
 
       <main className="content">
-        {activeTab === 'Rota'     && <Rota rota={rota} setRota={setRota} staffConfig={staffConfig} />}
+        {activeTab === 'Rota'     && <Rota rota={rota} setRota={setRota} staffConfig={staffConfig} holidays={holidays} />}
         {activeTab === 'Staff'    && <Staff holidays={holidays} staffConfig={staffConfig} />}
         {activeTab === 'Holidays' && <Holidays holidays={holidays} setHolidays={setHolidays} staffConfig={staffConfig} />}
         {activeTab === 'Policy'   && <Policy />}

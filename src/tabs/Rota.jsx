@@ -2,14 +2,18 @@ import { useState } from 'react'
 import { STAFF_META, CELL_CONFIG, SHIFT_HOURS } from '../data/constants'
 
 const WEEKEND_DAYS = new Set([4, 5])
-const DAY_NAMES    = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const MONTH_LONG   = ['January','February','March','April','May','June','July','August','September','October','November','December']
-const MONTH_SHORT  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const DAY_NAMES   = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const MONTH_LONG  = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const GBP = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 })
+
+function toISO(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+}
 
 function getWeekStart(weekOffset) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  // Rota week runs Tue–Sun; find most recent Tuesday
   const daysSinceTue = (today.getDay() - 2 + 7) % 7
   const tue = new Date(today)
   tue.setDate(today.getDate() - daysSinceTue + weekOffset * 7)
@@ -23,20 +27,30 @@ function nextState(current, dayIdx) {
     : (current === 'off' ? 'work'    : 'off')
 }
 
-export default function Rota({ rota, setRota, staffConfig }) {
+function effectiveState(empId, dateStr, rotaState, holidays) {
+  const onHoliday = holidays.some(h =>
+    h.employee === empId &&
+    h.status   === 'approved' &&
+    dateStr >= h.from &&
+    dateStr <= h.to
+  )
+  return onHoliday ? 'holiday' : rotaState
+}
+
+export default function Rota({ rota, setRota, staffConfig, holidays }) {
   const [weekOffset, setWeekOffset] = useState(0)
-  const weekIdx  = ((weekOffset % 4) + 4) % 4
-  const week     = rota[weekIdx]
-  const staff    = STAFF_META.map(s => ({ ...s, ...staffConfig[s.id] }))
+  const weekIdx   = ((weekOffset % 4) + 4) % 4
+  const week      = rota[weekIdx]
+  const staff     = STAFF_META.map(s => ({ ...s, ...staffConfig[s.id] }))
   const weekStart = getWeekStart(weekOffset)
 
-  // Build 6 days (Tue–Sun) with real dates
   const days = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(weekStart)
     d.setDate(weekStart.getDate() + i)
     const now = new Date(); now.setHours(0,0,0,0)
     return {
       date:      d,
+      iso:       toISO(d),
       short:     DAY_NAMES[d.getDay()],
       dayNum:    d.getDate(),
       monthIdx:  d.getMonth(),
@@ -54,6 +68,9 @@ export default function Rota({ rota, setRota, staffConfig }) {
     : `${MONTH_SHORT[startM]} – ${MONTH_SHORT[endM]} ${yr}`
 
   function toggleCell(empId, dayIdx) {
+    const dateStr = days[dayIdx].iso
+    const cur = effectiveState(empId, dateStr, week[dayIdx][empId], holidays)
+    if (cur === 'holiday') return
     setRota(prev =>
       prev.map((w, wi) =>
         wi !== weekIdx ? w
@@ -65,7 +82,10 @@ export default function Rota({ rota, setRota, staffConfig }) {
   }
 
   function hoursFor(empId) {
-    return week.filter(d => d[empId] !== 'off').length * SHIFT_HOURS
+    return days.reduce((sum, d, di) => {
+      const state = effectiveState(empId, d.iso, week[di][empId], holidays)
+      return sum + (state !== 'off' && state !== 'holiday' ? SHIFT_HOURS : 0)
+    }, 0)
   }
 
   function exportCSV() {
@@ -76,44 +96,47 @@ export default function Rota({ rota, setRota, staffConfig }) {
       if (s === 'weekend') return 'Weekend shift (9am–3:20pm)'
       return 'Weekday shift (9am–3:20pm)'
     }
-    const headers = ['Employee', ...days.map(d => `${d.short} ${d.dayNum} ${MONTH_SHORT[d.monthIdx]}`), 'Total Hours']
-    const rows = staff.map(s => [
-      s.name,
-      ...week.map(day => label(day[s.id])),
-      hoursFor(s.id),
-    ])
+    const headers = ['Employee', ...days.map(d => `${d.short} ${d.dayNum} ${MONTH_SHORT[d.monthIdx]}`), 'Hours', 'Est. Pay']
+    const rows = staff.map(s => {
+      const h = hoursFor(s.id)
+      return [
+        s.name,
+        ...days.map((d, di) => label(effectiveState(s.id, d.iso, week[di][s.id], holidays))),
+        h,
+        `£${(h * s.rate).toFixed(2)}`,
+      ]
+    })
     const title = `Brewch Rota – ${range} (Rota week ${weekIdx + 1} of 4)`
-    const csv   = [[title], headers, ...rows]
+    const csv = [[title], headers, ...rows]
       .map(r => r.map(c => `"${c}"`).join(','))
       .join('\n')
-
-    const a    = document.createElement('a')
-    a.href     = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
-    a.download = `brewch-rota-wk${weekIdx + 1}-${days[0].dayNum}${MONTH_SHORT[days[0].monthIdx]}${yr}.csv`
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    a.download = `brewch-rota-wk${weekIdx+1}-${days[0].dayNum}${MONTH_SHORT[days[0].monthIdx]}${yr}.csv`
     a.click()
     URL.revokeObjectURL(a.href)
   }
 
-  const teamHours   = staff.reduce((s, e) => s + hoursFor(e.id), 0)
-  const totalShifts = week.reduce((sum, day) => sum + STAFF_META.filter(s => day[s.id] !== 'off').length, 0)
+  const teamHours = staff.reduce((s, e) => s + hoursFor(e.id), 0)
+  const teamPay   = staff.reduce((s, e) => s + hoursFor(e.id) * e.rate, 0)
+  const totalShifts = days.reduce((sum, d, di) =>
+    sum + STAFF_META.filter(s => effectiveState(s.id, d.iso, week[di][s.id], holidays) !== 'off').length, 0
+  )
 
   return (
     <div>
-      {/* ── Calendar nav bar ── */}
       <div className="cal-nav">
-        <button className="cal-nav-btn" onClick={() => setWeekOffset(o => o - 1)} aria-label="Previous week">‹</button>
+        <button className="cal-nav-btn" onClick={() => setWeekOffset(o => o - 1)}>‹</button>
         <div className="cal-nav-center">
           <span className="cal-month">{monthDisplay}</span>
           <span className="cal-week-badge">Rota week {weekIdx + 1} of 4</span>
         </div>
-        <button className="cal-nav-btn" onClick={() => setWeekOffset(o => o + 1)} aria-label="Next week">›</button>
+        <button className="cal-nav-btn" onClick={() => setWeekOffset(o => o + 1)}>›</button>
         <button className="btn-add cal-today-btn" onClick={() => setWeekOffset(0)}>Today</button>
         <button className="btn-add cal-export-btn" onClick={exportCSV}>↓ Export CSV</button>
       </div>
 
-      {/* ── Calendar grid ── */}
       <div className="cal-grid">
-        {/* Header row */}
         <div className="cal-corner" />
         {days.map((d, i) => (
           <div key={i} className={`cal-day-header${d.isToday ? ' cal-hdr-today' : ''}${d.isWeekend ? ' cal-hdr-weekend' : ''}`}>
@@ -123,31 +146,29 @@ export default function Rota({ rota, setRota, staffConfig }) {
           </div>
         ))}
 
-        {/* Employee rows */}
-        {staff.map((s, si) => {
-          const isLast = si === staff.length - 1
-          return (
-            <RotaRow
-              key={s.id}
-              staff={s}
-              week={week}
-              days={days}
-              isLast={isLast}
-              onToggle={dayIdx => toggleCell(s.id, dayIdx)}
-            />
-          )
-        })}
+        {staff.map((s, si) => (
+          <RotaRow
+            key={s.id}
+            staff={s}
+            week={week}
+            days={days}
+            holidays={holidays}
+            isLast={si === staff.length - 1}
+            onToggle={dayIdx => toggleCell(s.id, dayIdx)}
+          />
+        ))}
       </div>
 
-      {/* ── Weekly stats ── */}
       <div className="stat-row" style={{ marginTop: 14 }}>
         {staff.map(s => {
-          const h = hoursFor(s.id)
+          const h   = hoursFor(s.id)
+          const pay = h * s.rate
           return (
             <div key={s.id} className="stat">
               <div className="stat-label">{s.name}</div>
               <div className="stat-val">{h}h</div>
               <div className="stat-sub">{h / SHIFT_HOURS} shift{h / SHIFT_HOURS !== 1 ? 's' : ''}</div>
+              <div className="stat-pay">{GBP.format(pay)} est.</div>
             </div>
           )
         })}
@@ -155,17 +176,18 @@ export default function Rota({ rota, setRota, staffConfig }) {
           <div className="stat-label">Team total</div>
           <div className="stat-val">{teamHours}h</div>
           <div className="stat-sub">{totalShifts} shifts</div>
+          <div className="stat-pay">{GBP.format(teamPay)} est.</div>
         </div>
       </div>
 
       <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginTop: 8 }}>
-        Click any cell to toggle on / off. Sat &amp; Sun are automatically weekend shifts.
+        Approved holidays overlay the rota automatically. Click any non-holiday cell to toggle on / off.
       </p>
     </div>
   )
 }
 
-function RotaRow({ staff, week, days, isLast, onToggle }) {
+function RotaRow({ staff, week, days, holidays, isLast, onToggle }) {
   return (
     <>
       <div className={`cal-row-label${isLast ? ' cal-row-last' : ''}`}>
@@ -179,7 +201,7 @@ function RotaRow({ staff, week, days, isLast, onToggle }) {
       </div>
 
       {week.map((day, di) => {
-        const state = day[staff.id]
+        const state = effectiveState(staff.id, days[di].iso, day[staff.id], holidays)
         const cfg   = CELL_CONFIG[state] ?? CELL_CONFIG.off
         const isOff = state === 'off'
         return (
@@ -187,13 +209,18 @@ function RotaRow({ staff, week, days, isLast, onToggle }) {
             key={di}
             className={[
               'cal-cell',
-              days[di].isToday  ? 'cal-cell-today'   : '',
+              days[di].isToday   ? 'cal-cell-today'       : '',
               days[di].isWeekend ? 'cal-cell-weekend-col' : '',
-              isLast             ? 'cal-cell-last'    : '',
+              isLast             ? 'cal-cell-last'        : '',
+              state === 'holiday'? 'cal-cell-holiday'     : '',
             ].join(' ')}
             style={!isOff ? { background: cfg.bg } : undefined}
             onClick={() => onToggle(di)}
-            title={state === 'holiday' ? 'Holiday — edit in Holidays tab' : 'Click to toggle on / off'}
+            title={
+              state === 'holiday' ? 'Approved holiday'
+              : isOff ? 'Day off — click to schedule'
+              : 'Click to toggle off'
+            }
           >
             {!isOff && (
               <span className="cal-cell-label" style={{ color: cfg.color }}>
